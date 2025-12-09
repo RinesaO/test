@@ -17,6 +17,7 @@ const publicRoutes = require('./routes/public');
 const doctorRoutes = require('./routes/doctor');
 const doctorsRoutes = require('./routes/doctors');
 const ministryRoutes = require('./routes/ministry');
+const mshRoutes = require('./routes/msh');
 const prescriptionRoutes = require('./routes/prescription');
 
 const app = express();
@@ -63,6 +64,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/doctor', doctorRoutes);
 app.use('/api/doctors', doctorsRoutes);
 app.use('/api/ministry', ministryRoutes);
+app.use('/api/msh', mshRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 
 // Health check

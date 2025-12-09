@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const PrivateRoute = ({ children, adminOnly = false, pharmacyOnly = false, ministryOnly = false }) => {
-  const { isAuthenticated, isAdmin, isPharmacy, isMinistry, loading } = useAuth();
+const PrivateRoute = ({ children, adminOnly = false, pharmacyOnly = false, ministryOnly = false, mshOnly = false }) => {
+  const { isAuthenticated, isAdmin, isPharmacy, isMinistry, isMSH, loading } = useAuth();
 
   if (loading) {
     return (
@@ -26,6 +26,10 @@ const PrivateRoute = ({ children, adminOnly = false, pharmacyOnly = false, minis
 
   if (ministryOnly && !isMinistry) {
     return <Navigate to="/ministry/login" replace />;
+  }
+
+  if (mshOnly && !isMSH) {
+    return <Navigate to="/msh-login" replace />;
   }
 
   return children;

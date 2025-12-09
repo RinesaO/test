@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import axios from 'axios';
+import UserSidebar from '../../components/UserSidebar';
+import AdvertisementBanner from '../../components/AdvertisementBanner';
 
 const PharmacyAdvertisementSection = () => {
+  const { t } = useLanguage();
   const [pharmacy, setPharmacy] = useState(null);
   const [products, setProducts] = useState([]);
   const [showAdForm, setShowAdForm] = useState(false);
@@ -40,7 +44,7 @@ const PharmacyAdvertisementSection = () => {
   const handlePurchaseAdSlot = async () => {
     try {
       await axios.post('/api/pharmacy/purchase-ad');
-      setMessage('Ad slot purchased successfully! You can now create your advertisement.');
+      setMessage(t('pharmacy.adSlotPurchased'));
       fetchPharmacyData();
     } catch (error) {
       setMessage('Error: ' + (error.response?.data?.message || error.message));
@@ -58,7 +62,7 @@ const PharmacyAdvertisementSection = () => {
     setMessage('');
 
     if (!adFormData.productId) {
-      setMessage('Please select a product to promote');
+      setMessage(t('pharmacy.selectProductError'));
       return;
     }
 
@@ -74,7 +78,7 @@ const PharmacyAdvertisementSection = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      setMessage('Advertisement published successfully!');
+      setMessage(t('pharmacy.adPublished'));
       setShowAdForm(false);
       setAdFormData({ image: null, offerText: '', productId: '' });
       fetchPharmacyData();
@@ -85,7 +89,7 @@ const PharmacyAdvertisementSection = () => {
 
   return (
     <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Advertising / Promote Product</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('pharmacy.advertising')}</h2>
       
       {message && (
         <div className={`mb-4 p-4 rounded ${message.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
@@ -95,28 +99,28 @@ const PharmacyAdvertisementSection = () => {
 
       {!pharmacy?.advertisement?.paid ? (
         <div>
-          <p className="text-gray-600 mb-4">Purchase an ad slot to promote your products to users.</p>
+          <p className="text-gray-600 mb-4">{t('pharmacy.purchaseAdSlot')}</p>
           <button
             onClick={handlePurchaseAdSlot}
             className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
           >
-            Purchase Ad Slot (€9.99)
+            {t('pharmacy.purchaseAd')}
           </button>
         </div>
       ) : !pharmacy?.advertisement?.active ? (
         <div>
-          <p className="text-gray-600 mb-4">Ad slot purchased! Create your advertisement below.</p>
+          <p className="text-gray-600 mb-4">{t('pharmacy.adSlotPurchased')}</p>
           {!showAdForm ? (
             <button
               onClick={() => setShowAdForm(true)}
               className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
             >
-              Create Advertisement
+              {t('pharmacy.createAdvertisement')}
             </button>
           ) : (
             <form onSubmit={handlePublishAd} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ad Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.adImage')}</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -126,25 +130,25 @@ const PharmacyAdvertisementSection = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Offer Text</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.offerText')}</label>
                 <textarea
                   value={adFormData.offerText}
                   onChange={(e) => setAdFormData({ ...adFormData, offerText: e.target.value })}
                   rows="3"
-                  placeholder="Enter your special offer or promotion text..."
+                  placeholder={t('pharmacy.enterOfferText')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Product to Promote</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.selectProduct')}</label>
                 <select
                   value={adFormData.productId}
                   onChange={(e) => setAdFormData({ ...adFormData, productId: e.target.value })}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">Select a product...</option>
+                  <option value="">{t('pharmacy.selectProductPlaceholder')}</option>
                   {products.map((product) => (
                     <option key={product._id} value={product._id}>
                       {product.name} - €{product.price.toFixed(2)}
@@ -158,7 +162,7 @@ const PharmacyAdvertisementSection = () => {
                   type="submit"
                   className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
                 >
-                  Publish Ad
+                  {t('pharmacy.publishAd')}
                 </button>
                 <button
                   type="button"
@@ -168,7 +172,7 @@ const PharmacyAdvertisementSection = () => {
                   }}
                   className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400"
                 >
-                  Cancel
+                  {t('button.cancel')}
                 </button>
               </div>
             </form>
@@ -176,7 +180,7 @@ const PharmacyAdvertisementSection = () => {
         </div>
       ) : (
         <div>
-          <p className="text-green-600 font-semibold mb-2">✓ Advertisement is active and visible to users</p>
+          <p className="text-green-600 font-semibold mb-2">✓ {t('pharmacy.adActive')}</p>
           {pharmacy.advertisement.image && (
             <img
               src={`http://localhost:5000${pharmacy.advertisement.image}`}
@@ -195,6 +199,7 @@ const PharmacyAdvertisementSection = () => {
 
 const Dashboard = () => {
   const { user, isPharmacy, isUser, isDoctor } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -204,8 +209,10 @@ const Dashboard = () => {
   const [showProductModal, setShowProductModal] = useState(false);
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
-  const [adIndex, setAdIndex] = useState(0);
   const [activeAds, setActiveAds] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Check if doctor needs to complete onboarding
@@ -221,14 +228,6 @@ const Dashboard = () => {
     }
   }, [isUser]);
 
-  useEffect(() => {
-    if (isUser) {
-      const interval = setInterval(() => {
-        setAdIndex((prev) => (prev + 1) % 3);
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [isUser]);
 
   const checkDoctorStatus = async () => {
     try {
@@ -281,43 +280,8 @@ const Dashboard = () => {
   };
 
   const handleProductClick = async (product) => {
-    try {
-      const response = await axios.get(`/api/products/${product._id}`);
-      const fullProduct = response.data.product;
-      
-      const pharmaciesResponse = await axios.get('/api/public/pharmacies');
-      const pharmacies = pharmaciesResponse.data.pharmacies || [];
-      
-      const productPharmacies = [];
-      for (const pharmacy of pharmacies) {
-        try {
-          const productsResponse = await axios.get(`/api/public/pharmacies/${pharmacy._id}/products`);
-          const pharmacyProducts = productsResponse.data.products || [];
-          const matchingProduct = pharmacyProducts.find(p => 
-            p.name.toLowerCase() === fullProduct.name.toLowerCase()
-          );
-          if (matchingProduct) {
-            productPharmacies.push({
-              pharmacyId: pharmacy._id,
-              pharmacyName: pharmacy.name,
-              city: pharmacy.address?.city || 'Unknown',
-              price: matchingProduct.price,
-              inStock: matchingProduct.inStock
-            });
-          }
-        } catch (error) {
-          console.error(`Error checking pharmacy ${pharmacy._id}:`, error);
-        }
-      }
-      
-      setSelectedProduct({
-        ...fullProduct,
-        pharmacies: productPharmacies
-      });
-      setShowProductModal(true);
-    } catch (error) {
-      console.error('Error fetching product details:', error);
-    }
+    // Navigate to product detail page instead of opening modal
+    navigate(`/product/${product._id}`);
   };
 
   const addToCart = (product) => {
@@ -337,11 +301,42 @@ const Dashboard = () => {
   const filteredAndSortedProducts = () => {
     let filtered = products.filter(product => {
       const searchLower = searchTerm.toLowerCase();
-      return (
+      const matchesSearch = (
         product.name.toLowerCase().includes(searchLower) ||
         (product.description && product.description.toLowerCase().includes(searchLower)) ||
         (product.category && product.category.toLowerCase().includes(searchLower))
       );
+
+      // Category filtering
+      if (selectedCategory) {
+        const productCategory = (product.category || '').toLowerCase();
+        const productName = (product.name || '').toLowerCase();
+        
+        switch (selectedCategory) {
+          case 'antibiotics':
+            return matchesSearch && (productCategory === 'antibiotics' || productCategory.includes('antibiotic') || productName.includes('antibiotic'));
+          case 'vitamins':
+            return matchesSearch && (productCategory === 'vitamins' || productCategory.includes('vitamin') || productName.includes('vitamin'));
+          case 'syrups':
+            return matchesSearch && (productCategory === 'syrups' || productCategory.includes('syrup') || productName.includes('syrup') || productCategory.includes('liquid'));
+          case 'creams':
+            return matchesSearch && (productCategory === 'creams' || productCategory.includes('cream') || productCategory.includes('ointment') || productName.includes('cream'));
+          case 'opiates':
+            return matchesSearch && (productCategory === 'opiates' || productCategory.includes('opiate') || productCategory.includes('opioid') || productName.includes('morphine') || productName.includes('codeine') || productName.includes('oxycodone'));
+          case 'other':
+            const categoryLower = productCategory.toLowerCase();
+            return matchesSearch && (
+              productCategory === 'other medicines (a-z)' ||
+              (!categoryLower.includes('antibiotic') && !categoryLower.includes('vitamin') && 
+               !categoryLower.includes('syrup') && !categoryLower.includes('cream') && 
+               !categoryLower.includes('opiate') && !categoryLower.includes('opioid'))
+            );
+          default:
+            return matchesSearch;
+        }
+      }
+
+      return matchesSearch;
     });
 
     if (sortBy === 'price-high') {
@@ -372,18 +367,23 @@ const Dashboard = () => {
     return result;
   };
 
-  const ads = [
-    { text: 'Special Offer: 20% off on all antibiotics this week!', color: 'bg-primary-100 text-primary-800' },
-    { text: 'Free delivery on orders over €50', color: 'bg-green-100 text-green-800' },
-    { text: 'New arrivals: Check out our latest products', color: 'bg-blue-100 text-blue-800' }
-  ];
+  const handleAdClick = async (ad) => {
+    if (ad.product && ad.product._id) {
+      // Navigate to product detail page instead of opening modal
+      navigate(`/product/${ad.product._id}`);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Welcome{user?.name ? `, ${user.name}` : ''}!
-        </h1>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        {!isUser && (
+          <div className="px-4 sm:px-6 lg:px-8 pt-12">
+            <h1 className="text-3xl font-bold text-gray-900 mb-8">
+              Welcome{user?.name ? `, ${user.name}` : ''}!
+            </h1>
+          </div>
+        )}
         
         {isPharmacy ? (
           // Pharmacy Dashboard
@@ -458,79 +458,73 @@ const Dashboard = () => {
             </Link>
           </div>
         ) : isUser ? (
-          // Regular User Dashboard
-          <>
-            {/* Smaller navigation cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-              <Link
-                to="/pharmacies"
-                className="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition"
-              >
-                <div className="text-primary-600 text-2xl mb-2">🏥</div>
-                <h2 className="text-sm font-semibold mb-1">Browse Pharmacies</h2>
-                <p className="text-gray-600 text-xs">Find pharmacies near you</p>
-              </Link>
+          // Regular User Dashboard with Sidebar
+          <div className="flex flex-col md:flex-row">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden fixed top-20 left-4 z-50 bg-primary-600 text-white p-3 rounded-lg shadow-lg hover:bg-primary-700"
+            >
+              ☰
+            </button>
 
-              <Link
-                to="/dashboard/profile"
-                className="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition"
-              >
-                <div className="text-primary-600 text-2xl mb-2">👤</div>
-                <h2 className="text-sm font-semibold mb-1">My Profile</h2>
-                <p className="text-gray-600 text-xs">Manage your account</p>
-              </Link>
+            {/* Vertical Sidebar */}
+            <UserSidebar 
+              onCategorySelect={setSelectedCategory} 
+              currentCategory={selectedCategory}
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              isCollapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            />
+            
+            {/* Main Content Area */}
+            <div className={`flex-1 p-4 md:p-8 mt-16 md:mt-0 transition-all duration-300 ${
+              sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'
+            }`}>
+              <h1 className="text-3xl font-bold text-gray-900 mb-8">
+                {t('common.welcome')}{user?.name ? `, ${user.name}` : ''}!
+              </h1>
 
-              <Link
-                to="/dashboard/prescriptions"
-                className="bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition"
-              >
-                <div className="text-primary-600 text-2xl mb-2">📄</div>
-                <h2 className="text-sm font-semibold mb-1">My Prescriptions</h2>
-                <p className="text-gray-600 text-xs">View prescriptions</p>
-              </Link>
-            </div>
-
-            {/* Ad Banner */}
-            <div className={`mb-6 p-4 rounded-lg ${ads[adIndex].color} text-center transition-all duration-500`}>
-              <p className="font-semibold">{ads[adIndex].text}</p>
-            </div>
+              {/* Paid Advertisement Banner - Above Search Area */}
+              <AdvertisementBanner onAdClick={handleAdClick} />
 
             {/* Search and Sort */}
             <div className="mb-6 flex flex-col md:flex-row gap-4">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder={t('common.searchProducts')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
-                <option value="">Sort by...</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
+                <option value="">{t('common.sortBy')}</option>
+                <option value="price-low">{t('common.priceLowHigh')}</option>
+                <option value="price-high">{t('common.priceHighLow')}</option>
               </select>
               <button
                 onClick={() => setShowCart(true)}
-                className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 relative"
+                className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 relative transition-colors shadow-md hover:shadow-lg"
               >
-                Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
+                🛒 {t('common.cart')} ({cart.reduce((sum, item) => sum + item.quantity, 0)})
               </button>
             </div>
 
             {/* Products Grid */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Products</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('common.products')}</h2>
               {loading ? (
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
                 </div>
               ) : filteredAndSortedProducts().length === 0 ? (
                 <div className="text-center py-12 bg-white rounded-lg shadow">
-                  <p className="text-gray-500">No products found</p>
+                  <p className="text-gray-500">{t('common.noProductsFound')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -540,38 +534,51 @@ const Dashboard = () => {
                       return (
                         <div
                           key={`ad-${ad.pharmacyId}-${index}`}
-                          className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg shadow-md overflow-hidden border-2 border-primary-300"
+                          onClick={() => handleAdClick(ad)}
+                          className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg shadow-md overflow-hidden border-2 border-primary-300 cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
                         >
                           {ad.image ? (
-                            <img
-                              src={`http://localhost:5000${ad.image}`}
-                              alt="Advertisement"
-                              className="w-full h-32 object-cover"
-                            />
+                            <div className="relative">
+                              <img
+                                src={`http://localhost:5000${ad.image}`}
+                                alt="Advertisement"
+                                className="w-full h-48 object-cover"
+                              />
+                              <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs font-bold px-2 py-1 rounded">
+                                AD
+                              </div>
+                            </div>
                           ) : (
-                            <div className="w-full h-32 bg-primary-200 flex items-center justify-center">
-                              <span className="text-primary-600 text-4xl">📢</span>
+                            <div className="w-full h-48 bg-primary-200 flex items-center justify-center relative">
+                              <span className="text-primary-600 text-5xl">📢</span>
+                              <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs font-bold px-2 py-1 rounded">
+                                AD
+                              </div>
                             </div>
                           )}
-                          <div className="p-4">
-                            <div className="text-xs font-semibold text-primary-700 mb-1">ADVERTISEMENT</div>
-                            {ad.offerText && (
-                              <p className="text-sm font-semibold text-gray-800 mb-2">{ad.offerText}</p>
-                            )}
-                            <p className="text-xs text-primary-600 font-medium mb-1">{ad.pharmacyName}</p>
-                            {ad.product && (
-                              <p className="text-xs text-gray-600">Promoting: {ad.product.name}</p>
-                            )}
-                          </div>
                         </div>
                       );
                     } else {
                       const product = item.data;
+                      const isOpiate = selectedCategory === 'opiates' || 
+                        (product.category && product.category.toLowerCase().includes('opiate')) ||
+                        (product.name && product.name.toLowerCase().includes('morphine')) ||
+                        (product.name && product.name.toLowerCase().includes('codeine')) ||
+                        (product.name && product.name.toLowerCase().includes('oxycodone'));
+                      
                       return (
                         <div
                           key={`${product._id}-${product.pharmacyId}`}
-                          onClick={() => handleProductClick(product)}
-                          className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition"
+                          onClick={() => {
+                            if (isOpiate) {
+                              alert(t('opiates.warning'));
+                            } else {
+                              handleProductClick(product);
+                            }
+                          }}
+                          className={`bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 ${
+                            isOpiate ? 'opacity-90 border-2 border-red-200' : ''
+                          }`}
                         >
                           {product.image ? (
                             <img
@@ -590,6 +597,11 @@ const Dashboard = () => {
                             <p className="text-sm text-gray-500 mb-2 truncate">Category: {product.category || 'Uncategorized'}</p>
                             <p className="text-xl font-bold text-primary-600">€{product.price.toFixed(2)}</p>
                             <p className="text-xs text-gray-400 mt-1">{product.pharmacyName}</p>
+                            {isOpiate && (
+                              <div className="mt-2 px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">
+                                {t('opiates.prescriptionRequired')}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -623,27 +635,27 @@ const Dashboard = () => {
                     )}
                     
                     <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Description</h3>
-                      <p className="text-gray-600">{selectedProduct.description || 'No description available'}</p>
+                      <h3 className="font-semibold mb-2">{t('product.description')}</h3>
+                      <p className="text-gray-600">{selectedProduct.description || t('product.noDescription')}</p>
                     </div>
                     
                     <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Category</h3>
-                      <p className="text-gray-600">{selectedProduct.category || 'Uncategorized'}</p>
+                      <h3 className="font-semibold mb-2">{t('product.category')}</h3>
+                      <p className="text-gray-600">{selectedProduct.category || t('product.uncategorized')}</p>
                     </div>
                     
                     <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Side Effects</h3>
-                      <p className="text-gray-600">{selectedProduct.sideEffects || 'No side effects information available'}</p>
+                      <h3 className="font-semibold mb-2">{t('product.sideEffects')}</h3>
+                      <p className="text-gray-600">{selectedProduct.sideEffects || t('product.noSideEffects')}</p>
                     </div>
                     
                     <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Usage Instructions</h3>
-                      <p className="text-gray-600">{selectedProduct.usageInstructions || 'Please consult your doctor for usage instructions'}</p>
+                      <h3 className="font-semibold mb-2">{t('product.usageInstructions')}</h3>
+                      <p className="text-gray-600">{selectedProduct.usageInstructions || t('product.consultDoctor')}</p>
                     </div>
                     
                     <div className="mb-4">
-                      <h3 className="font-semibold mb-2">Available in Pharmacies (Kosovo)</h3>
+                      <h3 className="font-semibold mb-2">{t('product.availableInPharmacies')}</h3>
                       {selectedProduct.pharmacies && selectedProduct.pharmacies.length > 0 ? (
                         <div className="space-y-2">
                           {selectedProduct.pharmacies.map((pharmacy, idx) => (
@@ -656,7 +668,7 @@ const Dashboard = () => {
                                 <div className="text-right">
                                   <p className="font-bold text-primary-600">€{pharmacy.price.toFixed(2)}</p>
                                   <p className={`text-xs ${pharmacy.inStock ? 'text-green-600' : 'text-red-600'}`}>
-                                    {pharmacy.inStock ? 'In Stock' : 'Out of Stock'}
+                                    {pharmacy.inStock ? t('product.inStock') : t('product.outOfStock')}
                                   </p>
                                 </div>
                               </div>
@@ -664,30 +676,48 @@ const Dashboard = () => {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-600">No pharmacies found for this product</p>
+                        <p className="text-gray-600">{t('product.noPharmacies')}</p>
                       )}
                     </div>
                     
-                    <button
-                      onClick={() => {
-                        const cheapestPharmacy = selectedProduct.pharmacies
-                          ?.filter(p => p.inStock)
-                          .sort((a, b) => a.price - b.price)[0];
-                        if (cheapestPharmacy) {
-                          addToCart({
-                            ...selectedProduct,
-                            pharmacyId: cheapestPharmacy.pharmacyId,
-                            pharmacyName: cheapestPharmacy.pharmacyName,
-                            price: cheapestPharmacy.price
-                          });
-                        } else {
-                          alert('Product is out of stock in all pharmacies');
-                        }
-                      }}
-                      className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700"
-                    >
-                      Add to Cart
-                    </button>
+                    {(() => {
+                      const isOpiate = selectedProduct.category?.toLowerCase().includes('opiate') ||
+                        selectedProduct.category?.toLowerCase().includes('opioid') ||
+                        selectedProduct.name?.toLowerCase().includes('morphine') ||
+                        selectedProduct.name?.toLowerCase().includes('codeine') ||
+                        selectedProduct.name?.toLowerCase().includes('oxycodone');
+                      
+                      if (isOpiate) {
+                        return (
+                          <div className="w-full bg-red-100 text-red-700 px-6 py-3 rounded-lg font-semibold text-center border-2 border-red-300">
+                            {t('opiates.prescriptionRequired')}
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <button
+                          onClick={() => {
+                            const cheapestPharmacy = selectedProduct.pharmacies
+                              ?.filter(p => p.inStock)
+                              .sort((a, b) => a.price - b.price)[0];
+                            if (cheapestPharmacy) {
+                              addToCart({
+                                ...selectedProduct,
+                                pharmacyId: cheapestPharmacy.pharmacyId,
+                                pharmacyName: cheapestPharmacy.pharmacyName,
+                                price: cheapestPharmacy.price
+                              });
+                            } else {
+                              alert(t('product.outOfStockAll'));
+                            }
+                          }}
+                          className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
+                        >
+                          {t('product.addToCart')}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -751,7 +781,7 @@ const Dashboard = () => {
                                     onClick={() => setCart(cart.filter(c => c !== item))}
                                     className="ml-2 text-red-600 hover:text-red-800"
                                   >
-                                    Remove
+                                    {t('cart.remove')}
                                   </button>
                                 </div>
                               </div>
@@ -761,7 +791,7 @@ const Dashboard = () => {
                         
                         <div className="border-t pt-4 mb-4">
                           <div className="flex justify-between text-xl font-bold">
-                            <span>Total:</span>
+                            <span>{t('cart.total')}:</span>
                             <span>€{cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
                           </div>
                         </div>
@@ -770,7 +800,7 @@ const Dashboard = () => {
                           onClick={() => navigate('/dashboard/checkout')}
                           className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700"
                         >
-                          Proceed to Checkout
+                          {t('cart.proceedToCheckout')}
                         </button>
                       </>
                     )}
@@ -778,7 +808,8 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
-          </>
+            </div>
+          </div>
         ) : (
           // Default/Admin view
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

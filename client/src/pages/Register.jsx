@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Register = () => {
+  const { t } = useLanguage();
   const [userType, setUserType] = useState('user'); // 'user', 'pharmacy', or 'doctor'
   const [formData, setFormData] = useState({
     email: '',
@@ -71,12 +73,12 @@ const Register = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
+          {t('auth.createAccount')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
+          {t('auth.or')}{' '}
           <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
-            sign in to your existing account
+            {t('auth.signInExisting')}
           </Link>
         </p>
       </div>
@@ -93,7 +95,7 @@ const Register = () => {
             {/* User Type Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                I want to register as:
+                {t('auth.registerAs')}
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <button
@@ -105,7 +107,7 @@ const Register = () => {
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  👤 Regular User
+                  👤 {t('auth.regularUser')}
                 </button>
                 <button
                   type="button"
@@ -116,7 +118,7 @@ const Register = () => {
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  🏥 Pharmacy
+                  🏥 {t('auth.pharmacy')}
                 </button>
                 <button
                   type="button"
@@ -127,7 +129,7 @@ const Register = () => {
                       : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
                   }`}
                 >
-                  👨‍⚕️ Doctor
+                  👨‍⚕️ {t('auth.doctor')}
                 </button>
               </div>
             </div>
@@ -136,7 +138,7 @@ const Register = () => {
               <>
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email address
+                    {t('auth.email')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -154,7 +156,7 @@ const Register = () => {
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                    Password
+                    {t('auth.password')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -176,7 +178,7 @@ const Register = () => {
             {userType === 'user' && (
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full Name
+                  {t('auth.name')}
                 </label>
                 <div className="mt-1">
                   <input
@@ -197,7 +199,7 @@ const Register = () => {
               <>
                 <div>
                   <label htmlFor="pharmacyName" className="block text-sm font-medium text-gray-700">
-                    Pharmacy Name
+                    {t('auth.pharmacyName')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -214,7 +216,7 @@ const Register = () => {
 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                    Phone Number
+                    {t('auth.phone')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -231,7 +233,7 @@ const Register = () => {
 
                 <div>
                   <label htmlFor="street" className="block text-sm font-medium text-gray-700">
-                    Street Address
+                    {t('auth.street')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -247,7 +249,7 @@ const Register = () => {
 
                 <div>
                   <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                    City
+                    {t('auth.city')}
                   </label>
                   <div className="mt-1">
                     <input
@@ -270,7 +272,7 @@ const Register = () => {
                   onClick={() => navigate('/doctor-signup')}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
-                  Continue as Doctor
+                  {t('auth.continueAsDoctor')}
                 </button>
               </div>
             ) : (
@@ -280,7 +282,7 @@ const Register = () => {
                   disabled={loading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
                 >
-                  {loading ? 'Creating account...' : 'Create account'}
+                  {loading ? t('auth.registering') : t('auth.register')}
                 </button>
               </div>
             )}

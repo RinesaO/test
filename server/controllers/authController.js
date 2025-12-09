@@ -105,14 +105,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Block doctor login if not approved by ministry
+    // Block doctor login if not approved
+    let showApprovalMessage = false;
     if (user.role === 'doctor') {
-      if (user.doctorStatus !== 'approved_by_ministry') {
-        if (user.doctorStatus === 'pending_ministry_review' || user.doctorStatus === 'pending' || user.doctorStatus === 'rejected_by_ministry' || user.doctorStatus === 'rejected') {
-          return res.status(403).json({ 
-            message: 'Your application is still under review by the Ministry of Health.' 
-          });
-        }
+      const DoctorProfile = require('../models/DoctorProfile');
+      const doctorProfile = await DoctorProfile.findOne({ user: user._id });
+      if (!doctorProfile || doctorProfile.status !== 'approved') {
+        return res.status(403).json({ 
+          message: 'Your account is still under review by the Ministry of Health.' 
+        });
+      }
+      // Check if this is first login after approval
+      if (doctorProfile.status === 'approved' && !doctorProfile.approvalSeen) {
+        showApprovalMessage = true;
       }
     }
 
@@ -128,6 +133,7 @@ exports.login = async (req, res) => {
     res.json({
       success: true,
       token,
+      showApprovalMessage,
       user: {
         id: user._id,
         email: user.email,

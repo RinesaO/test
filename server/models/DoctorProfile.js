@@ -64,6 +64,22 @@ const doctorProfileSchema = new mongoose.Schema({
     idCard: { type: String, default: '' },
     certificate: { type: String, default: '' }
   },
+  licenseFile: {
+    type: String,
+    default: ''
+  },
+  idCardFile: {
+    type: String,
+    default: ''
+  },
+  certificateFile: {
+    type: String,
+    default: ''
+  },
+  approvalSeen: {
+    type: Boolean,
+    default: false
+  },
   workplaceName: {
     type: String,
     trim: true

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const PharmacyProfile = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [pharmacy, setPharmacy] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -199,7 +200,11 @@ const PharmacyProfile = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {products.map((product) => (
-                      <div key={product._id} className="bg-gray-50 rounded-lg p-4">
+                      <div
+                        key={product._id}
+                        onClick={() => navigate(`/product/${product._id}`)}
+                        className="bg-gray-50 rounded-lg p-4 cursor-pointer hover:shadow-md transition-all duration-300"
+                      >
                         {product.image && (
                           <img
                             src={`http://localhost:5000${product.image}`}

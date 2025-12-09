@@ -1,6 +1,9 @@
 const DoctorProfile = require('../models/DoctorProfile');
 const User = require('../models/User');
 const upload = require('../config/upload');
+const { upload: doctorUpload, createDoctorUploadDir } = require('../config/doctorUpload');
+const fs = require('fs');
+const path = require('path');
 
 // @desc    Submit doctor profile for review
 // @route   POST /api/doctor/profile
@@ -77,6 +80,30 @@ exports.submitProfile = async (req, res) => {
   }
 };
 
+// @desc    Mark approval message as seen
+// @route   POST /api/doctor/mark-approval-seen
+// @access  Private (Doctor)
+exports.markApprovalSeen = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const doctorProfile = await DoctorProfile.findOne({ user: userId });
+    
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor profile not found' });
+    }
+
+    doctorProfile.approvalSeen = true;
+    await doctorProfile.save();
+
+    res.json({
+      success: true,
+      message: 'Approval message marked as seen'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get doctor profile
 // @route   GET /api/doctor/profile
 // @access  Private (Doctor)
@@ -97,6 +124,30 @@ exports.getProfile = async (req, res) => {
     res.json({
       success: true,
       profile: doctorProfile
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Mark approval message as seen
+// @route   POST /api/doctor/mark-approval-seen
+// @access  Private (Doctor)
+exports.markApprovalSeen = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const doctorProfile = await DoctorProfile.findOne({ user: userId });
+    
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor profile not found' });
+    }
+
+    doctorProfile.approvalSeen = true;
+    await doctorProfile.save();
+
+    res.json({
+      success: true,
+      message: 'Approval message marked as seen'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -125,13 +176,37 @@ exports.getStatus = async (req, res) => {
   }
 };
 
+// @desc    Mark approval message as seen
+// @route   POST /api/doctor/mark-approval-seen
+// @access  Private (Doctor)
+exports.markApprovalSeen = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const doctorProfile = await DoctorProfile.findOne({ user: userId });
+    
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor profile not found' });
+    }
+
+    doctorProfile.approvalSeen = true;
+    await doctorProfile.save();
+
+    res.json({
+      success: true,
+      message: 'Approval message marked as seen'
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Apply for doctor registration (public sign-up)
 // @route   POST /api/doctors/apply
 // @access  Public
 exports.applyForDoctor = async (req, res) => {
   try {
     // Handle file uploads first
-    const uploadFields = upload.fields([
+    const uploadFields = doctorUpload.fields([
       { name: 'license', maxCount: 1 },
       { name: 'idCard', maxCount: 1 },
       { name: 'certificate', maxCount: 1 }
@@ -151,6 +226,11 @@ exports.applyForDoctor = async (req, res) => {
           return res.status(400).json({ message: 'All fields are required' });
         }
 
+        // Validate required files
+        if (!req.files?.license?.[0] || !req.files?.idCard?.[0] || !req.files?.certificate?.[0]) {
+          return res.status(400).json({ message: 'All document files are required (License PDF, ID Card, Certificate)' });
+        }
+
         // Check if user already exists
         const userExists = await User.findOne({ email });
         if (userExists) {
@@ -163,19 +243,35 @@ exports.applyForDoctor = async (req, res) => {
           password,
           role: 'doctor',
           name: fullName,
-          doctorStatus: 'pending_ministry_review'
+          doctorStatus: 'pending'
         });
 
-        const documents = {
-          license: req.files?.license?.[0] ? `/uploads/${req.files.license[0].filename}` : '',
-          idCard: req.files?.idCard?.[0] ? `/uploads/${req.files.idCard[0].filename}` : '',
-          certificate: req.files?.certificate?.[0] ? `/uploads/${req.files.certificate[0].filename}` : ''
+        // Create doctor-specific upload directory
+        const doctorDir = createDoctorUploadDir(user._id.toString());
+        
+        // Move files to doctor-specific directory
+        const moveFile = (file, newName) => {
+          const oldPath = path.join(__dirname, '../uploads/doctors', file.filename);
+          const newPath = path.join(doctorDir, newName);
+          if (fs.existsSync(oldPath)) {
+            fs.renameSync(oldPath, newPath);
+            return `/uploads/doctors/${user._id}/${newName}`;
+          }
+          return '';
         };
+
+        const licenseFileName = `license-${Date.now()}${path.extname(req.files.license[0].originalname)}`;
+        const idCardFileName = `idcard-${Date.now()}${path.extname(req.files.idCard[0].originalname)}`;
+        const certificateFileName = `certificate-${Date.now()}${path.extname(req.files.certificate[0].originalname)}`;
+
+        const licenseFile = moveFile(req.files.license[0], licenseFileName);
+        const idCardFile = moveFile(req.files.idCard[0], idCardFileName);
+        const certificateFile = moveFile(req.files.certificate[0], certificateFileName);
 
         // Create doctor profile
         const nameParts = fullName.split(' ').filter(part => part.trim() !== '');
         const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || firstName; // Use firstName as fallback if no lastName
+        const lastName = nameParts.slice(1).join(' ') || firstName;
 
         const doctorProfile = await DoctorProfile.create({
           user: user._id,
@@ -185,8 +281,10 @@ exports.applyForDoctor = async (req, res) => {
           licenseNumber,
           workplaceName,
           phone,
-          documents,
-          status: 'pending_ministry_review'
+          licenseFile,
+          idCardFile,
+          certificateFile,
+          status: 'pending'
         });
 
         res.status(201).json({
@@ -197,6 +295,30 @@ exports.applyForDoctor = async (req, res) => {
       } catch (error) {
         res.status(500).json({ message: error.message });
       }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Mark approval message as seen
+// @route   POST /api/doctor/mark-approval-seen
+// @access  Private (Doctor)
+exports.markApprovalSeen = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const doctorProfile = await DoctorProfile.findOne({ user: userId });
+    
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor profile not found' });
+    }
+
+    doctorProfile.approvalSeen = true;
+    await doctorProfile.save();
+
+    res.json({
+      success: true,
+      message: 'Approval message marked as seen'
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

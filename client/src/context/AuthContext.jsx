@@ -40,13 +40,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
-      const { token, user } = response.data;
+      const { token, user, showApprovalMessage } = response.data;
       
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
       
-      return { success: true, user };
+      return { success: true, user, showApprovalMessage };
     } catch (error) {
       return {
         success: false,
@@ -90,7 +90,8 @@ export const AuthProvider = ({ children }) => {
     isPharmacy: user?.role === 'pharmacy',
     isUser: user?.role === 'user',
     isDoctor: user?.role === 'doctor',
-    isMinistry: user?.role === 'ministry_admin'
+    isMinistry: user?.role === 'ministry_admin',
+    isMSH: user?.role === 'msh'
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

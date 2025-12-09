@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Products = () => {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -111,7 +113,7 @@ const Products = () => {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('pharmacy.products')}</h1>
           <button
             onClick={() => {
               setEditingProduct(null);
@@ -127,7 +129,7 @@ const Products = () => {
             }}
             className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
           >
-            Add Product
+            {t('pharmacy.addProduct')}
           </button>
         </div>
 
@@ -143,7 +145,7 @@ const Products = () => {
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
-            <p className="text-gray-500">No products yet. Add your first product!</p>
+            <p className="text-gray-500">{t('pharmacy.noProducts')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -163,20 +165,20 @@ const Products = () => {
                   )}
                   <p className="text-lg font-bold text-primary-600 mb-2">€{product.price.toFixed(2)}</p>
                   <p className="text-sm text-gray-500 mb-4">
-                    Category: {product.category} | {product.inStock ? 'In Stock' : 'Out of Stock'}
+                    {t('product.category')}: {product.category} | {product.inStock ? t('product.inStock') : t('product.outOfStock')}
                   </p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(product)}
                       className="flex-1 bg-primary-600 text-white px-4 py-2 rounded hover:bg-primary-700"
                     >
-                      Edit
+                      {t('button.edit')}
                     </button>
                     <button
                       onClick={() => handleDelete(product._id)}
                       className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                     >
-                      Delete
+                      {t('button.delete')}
                     </button>
                   </div>
                   <div className="mt-2">
@@ -202,11 +204,11 @@ const Products = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
               <h2 className="text-2xl font-bold mb-6">
-                {editingProduct ? 'Edit Product' : 'Add Product'}
+                {editingProduct ? t('pharmacy.editProduct') : t('pharmacy.addProduct')}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.productName')}</label>
                   <input
                     type="text"
                     name="name"
@@ -217,7 +219,7 @@ const Products = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.productDescription')}</label>
                   <textarea
                     name="description"
                     value={formData.description}
@@ -227,7 +229,7 @@ const Products = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.productImage')}</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -237,17 +239,17 @@ const Products = () => {
                         if (productId) {
                           handleImageUpload(productId, e.target.files[0]);
                         } else {
-                          setMessage('Please create the product first, then upload the image');
+                          setMessage(t('pharmacy.uploadAfterCreate'));
                         }
                       }
                     }}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Upload image after creating the product</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('pharmacy.uploadAfterCreate')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price (€)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.productPrice')}</label>
                     <input
                       type="number"
                       name="price"
@@ -260,20 +262,27 @@ const Products = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.productCategory')}</label>
+                    <select
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    />
+                    >
+                      <option value="">{t('common.selectCategory')}</option>
+                      <option value="Antibiotics">{t('category.antibiotics')}</option>
+                      <option value="Vitamins">{t('category.vitamins')}</option>
+                      <option value="Syrups">{t('category.syrups')}</option>
+                      <option value="Creams">{t('category.creams')}</option>
+                      <option value="Other Medicines (A-Z)">{t('category.other')}</option>
+                      <option value="Opiates">{t('category.opiates')}</option>
+                    </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.stockQuantity')}</label>
                     <input
                       type="number"
                       name="stockQuantity"
@@ -292,7 +301,7 @@ const Products = () => {
                         onChange={handleChange}
                         className="mr-2"
                       />
-                      <span className="text-sm font-medium text-gray-700">In Stock</span>
+                      <span className="text-sm font-medium text-gray-700">{t('pharmacy.inStock')}</span>
                     </label>
                   </div>
                 </div>
@@ -301,7 +310,7 @@ const Products = () => {
                     type="submit"
                     className="flex-1 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
                   >
-                    {editingProduct ? 'Update' : 'Create'}
+                    {editingProduct ? t('pharmacy.updateProduct') : t('pharmacy.createProduct')}
                   </button>
                   <button
                     type="button"
@@ -311,7 +320,7 @@ const Products = () => {
                     }}
                     className="flex-1 bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400"
                   >
-                    Cancel
+                    {t('button.cancel')}
                   </button>
                 </div>
               </form>

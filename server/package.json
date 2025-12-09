@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "create-admin": "node scripts/create-admin.js",
+    "create-msh-admin": "node scripts/create-msh-admin.js",
     "generate-user-ids": "node scripts/generate-user-ids.js"
   },
   "keywords": ["pharmacy", "subscription", "api"],

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -13,6 +14,11 @@ import Register from './pages/Register';
 import DoctorSignUp from './pages/DoctorSignUp';
 import MinistryLogin from './pages/MinistryLogin';
 import DoctorApprovalPanel from './pages/ministry/DoctorApprovalPanel';
+import MSHLogin from './pages/MSHLogin';
+import MSHDashboard from './pages/msh/MSHDashboard';
+import MSHAllDoctors from './pages/msh/MSHAllDoctors';
+import MSHStatistics from './pages/msh/MSHStatistics';
+import MSHDoctorProfile from './pages/msh/MSHDoctorProfile';
 
 // Dashboard pages
 import Dashboard from './pages/dashboard/Dashboard';
@@ -24,6 +30,8 @@ import DoctorOnboarding from './pages/dashboard/DoctorOnboarding';
 import CreatePrescription from './pages/dashboard/CreatePrescription';
 import Prescriptions from './pages/dashboard/Prescriptions';
 import Checkout from './pages/dashboard/Checkout';
+import Settings from './pages/dashboard/Settings';
+import ProductDetail from './pages/ProductDetail';
 
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -34,20 +42,23 @@ import AdminDoctorRequests from './pages/admin/AdminDoctorRequests';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-grow">
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen flex flex-col">
+            <Navbar />
+            <main className="flex-grow">
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Home />} />
               <Route path="/pharmacies" element={<PharmacyDirectory />} />
               <Route path="/pharmacy/:id" element={<PharmacyProfile />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/doctor-signup" element={<DoctorSignUp />} />
               <Route path="/ministry/login" element={<MinistryLogin />} />
+              <Route path="/msh-login" element={<MSHLogin />} />
 
               {/* Protected routes - Pharmacy */}
               <Route
@@ -122,6 +133,14 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/dashboard/settings"
+                element={
+                  <PrivateRoute>
+                    <Settings />
+                  </PrivateRoute>
+                }
+              />
 
               {/* Protected routes - Admin */}
               <Route
@@ -175,6 +194,40 @@ function App() {
                 }
               />
 
+              {/* Protected routes - MSH */}
+              <Route
+                path="/msh-dashboard"
+                element={
+                  <PrivateRoute mshOnly>
+                    <MSHDashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/msh-doctors"
+                element={
+                  <PrivateRoute mshOnly>
+                    <MSHAllDoctors />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/msh-statistics"
+                element={
+                  <PrivateRoute mshOnly>
+                    <MSHStatistics />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/msh/doctor/:id"
+                element={
+                  <PrivateRoute mshOnly>
+                    <MSHDoctorProfile />
+                  </PrivateRoute>
+                }
+              />
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
@@ -182,6 +235,7 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
+    </LanguageProvider>
   );
 }
 

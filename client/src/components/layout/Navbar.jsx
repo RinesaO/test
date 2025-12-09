@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout, isAdmin } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -33,7 +35,16 @@ const Navbar = () => {
               </Link>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Language Toggle Button */}
+            <button
+              onClick={toggleLanguage}
+              className="px-3 py-2 rounded-md text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors border border-gray-300"
+              title={language === 'en' ? 'Switch to Albanian' : 'Switch to English'}
+            >
+              {language === 'en' ? 'AL' : 'EN'}
+            </button>
+            
             {isAuthenticated ? (
               <>
                 {isAdmin ? (
@@ -51,12 +62,12 @@ const Navbar = () => {
                     Dashboard
                   </Link>
                 )}
-                <span className="text-gray-500 text-sm">{user?.email}</span>
+                <span className="text-gray-500 text-sm hidden sm:inline">{user?.email}</span>
                 <button
                   onClick={handleLogout}
                   className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700"
                 >
-                  Logout
+                  {t('button.logout')}
                 </button>
               </>
             ) : (
@@ -65,13 +76,13 @@ const Navbar = () => {
                   to="/login"
                   className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Login
+                  {t('button.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700"
                 >
-                  Register
+                  {t('button.register')}
                 </Link>
               </>
             )}
