@@ -1,4 +1,6 @@
 const Pharmacy = require('../models/Pharmacy');
+const Promotion = require('../models/Promotion');
+const Product = require('../models/Product');
 const upload = require('../config/upload');
 
 // @desc    Get pharmacy profile
@@ -110,6 +112,65 @@ exports.getAnalytics = async (req, res) => {
   }
 };
 
+// @desc    Get all promotions for pharmacy with stats
+// @route   GET /api/pharmacy/promotions
+// @access  Private (Pharmacy)
+exports.getPromotions = async (req, res) => {
+  try {
+    const pharmacy = await Pharmacy.findOne({ user: req.user.id });
+    
+    if (!pharmacy) {
+      return res.status(404).json({ message: 'Pharmacy not found' });
+    }
+
+    const promotions = await Promotion.find({ pharmacy: pharmacy._id })
+      .populate('product', 'name price category')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, promotions });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Track promotion click
+// @route   POST /api/promotions/:id/click
+// @access  Public
+exports.trackPromotionClick = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const promotion = await Promotion.findById(id);
+    
+    if (promotion && promotion.active) {
+      promotion.clicks += 1;
+      await promotion.save();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Track promotion purchase
+// @route   POST /api/promotions/:id/purchase
+// @access  Public
+exports.trackPromotionPurchase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const promotion = await Promotion.findById(id);
+    
+    if (promotion) {
+      promotion.purchases += 1;
+      await promotion.save();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Increment pharmacy views
 // @route   POST /api/pharmacy/view
 // @access  Public
@@ -129,7 +190,7 @@ exports.incrementView = async (req, res) => {
   }
 };
 
-// @desc    Purchase ad slot (UI only - placeholder)
+// @desc    Purchase ad slot - allows multiple promotions
 // @route   POST /api/pharmacy/purchase-ad
 // @access  Private (Pharmacy)
 exports.purchaseAdSlot = async (req, res) => {
@@ -140,17 +201,19 @@ exports.purchaseAdSlot = async (req, res) => {
       return res.status(404).json({ message: 'Pharmacy not found' });
     }
 
+    // Set paid flag to allow promotion creation
+    // This flag doesn't get reset, allowing multiple promotions
     pharmacy.advertisement = pharmacy.advertisement || {};
     pharmacy.advertisement.paid = true;
     await pharmacy.save();
 
-    res.json({ success: true, message: 'Ad slot purchased successfully' });
+    res.json({ success: true, message: 'Ad slot purchased successfully. You can now promote products.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Publish advertisement
+// @desc    Publish advertisement - creates a new Promotion
 // @route   POST /api/pharmacy/publish-ad
 // @access  Private (Pharmacy)
 exports.publishAd = async (req, res) => {
@@ -172,18 +235,31 @@ exports.publishAd = async (req, res) => {
         return res.status(400).json({ message: err.message });
       }
 
-      pharmacy.advertisement = pharmacy.advertisement || {};
-      pharmacy.advertisement.offerText = req.body.offerText || '';
-      pharmacy.advertisement.product = req.body.productId || null;
-      
-      if (req.file) {
-        pharmacy.advertisement.image = `/uploads/${req.file.filename}`;
-      }
-      
-      pharmacy.advertisement.active = true;
-      await pharmacy.save();
+      const { productId, offerText } = req.body;
 
-      res.json({ success: true, advertisement: pharmacy.advertisement });
+      if (!productId) {
+        return res.status(400).json({ message: 'Product ID is required' });
+      }
+
+      // Verify product belongs to pharmacy
+      const product = await Product.findById(productId);
+      if (!product || product.pharmacy.toString() !== pharmacy._id.toString()) {
+        return res.status(403).json({ message: 'Product not found or does not belong to your pharmacy' });
+      }
+
+      // Create new promotion
+      const promotionData = {
+        pharmacy: pharmacy._id,
+        product: productId,
+        offerText: offerText || '',
+        image: req.file ? `/uploads/${req.file.filename}` : '',
+        startDate: new Date(),
+        active: true
+      };
+
+      const promotion = await Promotion.create(promotionData);
+
+      res.json({ success: true, promotion, message: 'Advertisement published successfully' });
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

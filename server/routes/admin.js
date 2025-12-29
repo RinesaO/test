@@ -15,7 +15,9 @@ const {
   getDoctorRequests,
   getAllDoctors,
   approveDoctor,
-  rejectDoctor
+  rejectDoctor,
+  viewFile,
+  downloadFile
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -38,6 +40,8 @@ router.get('/doctors/requests', getDoctorRequests);
 router.get('/doctors', getAllDoctors);
 router.put('/doctors/:id/approve', approveDoctor);
 router.put('/doctors/:id/reject', rejectDoctor);
+router.get('/view-file/:doctorId/:fileType', viewFile);
+router.get('/download-file/:doctorId/:fileType', downloadFile);
 
 module.exports = router;
 

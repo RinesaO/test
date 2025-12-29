@@ -2,6 +2,8 @@ const Pharmacy = require('../models/Pharmacy');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const DoctorProfile = require('../models/DoctorProfile');
+const path = require('path');
+const fs = require('fs');
 
 // @desc    Get all pharmacies
 // @route   GET /api/admin/pharmacies
@@ -343,6 +345,105 @@ exports.rejectDoctor = async (req, res) => {
       message: 'Doctor request rejected',
       doctor: doctorProfile
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Helper function to get file info (shared logic)
+const getAdminFileInfo = async (doctorId, fileType) => {
+  // Validate fileType to prevent directory traversal
+  if (!['license', 'idCard', 'certificate'].includes(fileType)) {
+    return { error: 'Invalid file type', status: 400 };
+  }
+
+  const doctorProfile = await DoctorProfile.findById(doctorId);
+  if (!doctorProfile) {
+    return { error: 'Doctor profile not found', status: 404 };
+  }
+
+  // Check documents object first, then fallback to individual file fields
+  let filePath = doctorProfile.documents?.[fileType] || 
+                 doctorProfile[`${fileType}File`] || 
+                 '';
+
+  if (!filePath) {
+    return { error: 'File not found', status: 404 };
+  }
+
+  // Remove leading slash if present and construct absolute path
+  const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+  const absolutePath = path.join(__dirname, '..', cleanPath);
+
+  // Security check: Ensure the file is within the /uploads/doctors directory
+  const uploadsDir = path.join(__dirname, '../uploads/doctors');
+  if (!absolutePath.startsWith(uploadsDir)) {
+    return { error: 'Access denied: Invalid file path', status: 403 };
+  }
+
+  if (!fs.existsSync(absolutePath)) {
+    return { error: 'File not found on server', status: 404 };
+  }
+
+  return { absolutePath, filePath: cleanPath };
+};
+
+// @desc    View doctor uploaded file
+// @route   GET /api/admin/view-file/:doctorId/:fileType
+// @access  Private (Admin)
+exports.viewFile = async (req, res) => {
+  try {
+    const { doctorId, fileType } = req.params;
+
+    const fileInfo = await getAdminFileInfo(doctorId, fileType);
+    if (fileInfo.error) {
+      return res.status(fileInfo.status).json({ message: fileInfo.error });
+    }
+
+    // Determine Content-Type based on file extension
+    const ext = path.extname(fileInfo.absolutePath).toLowerCase();
+    const contentTypes = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${path.basename(fileInfo.absolutePath)}"`);
+    res.sendFile(fileInfo.absolutePath);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Download doctor uploaded file
+// @route   GET /api/admin/download-file/:doctorId/:fileType
+// @access  Private (Admin)
+exports.downloadFile = async (req, res) => {
+  try {
+    const { doctorId, fileType } = req.params;
+
+    const fileInfo = await getAdminFileInfo(doctorId, fileType);
+    if (fileInfo.error) {
+      return res.status(fileInfo.status).json({ message: fileInfo.error });
+    }
+
+    // Determine Content-Type based on file extension
+    const ext = path.extname(fileInfo.absolutePath).toLowerCase();
+    const contentTypes = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+
+    const fileName = path.basename(fileInfo.absolutePath);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.sendFile(fileInfo.absolutePath);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

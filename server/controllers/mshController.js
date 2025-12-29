@@ -84,6 +84,102 @@ exports.rejectDoctor = async (req, res) => {
   }
 };
 
+// @desc    Remove doctor
+// @route   POST /api/msh/remove-doctor
+// @access  Private (MSH)
+exports.removeDoctor = async (req, res) => {
+  try {
+    const { doctorId, removalReason } = req.body;
+
+    // Validate removal reason is provided
+    if (!removalReason) {
+      return res.status(400).json({ message: 'Removal reason is required' });
+    }
+
+    // Validate removal reason is from allowed list
+    const allowedReasons = [
+      'Did not follow platform guidelines',
+      'License or documentation issues',
+      'Violation of pharmaceutical regulations',
+      'Inactive or unresponsive account',
+      'False or misleading information',
+      'Ethical or professional misconduct',
+      'Other (internal review decision)'
+    ];
+
+    if (!allowedReasons.includes(removalReason)) {
+      return res.status(400).json({ message: 'Invalid removal reason' });
+    }
+
+    const doctorProfile = await DoctorProfile.findById(doctorId).populate('user');
+    if (!doctorProfile) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    // Only allow removal of approved or rejected doctors
+    if (doctorProfile.status !== 'approved' && doctorProfile.status !== 'rejected') {
+      return res.status(400).json({ message: 'Only approved or rejected doctors can be removed' });
+    }
+
+    // Mark doctor as removed
+    doctorProfile.status = 'removed';
+    doctorProfile.rejectionReason = removalReason;
+    doctorProfile.reviewedBy = req.user.id;
+    doctorProfile.reviewedAt = new Date();
+    await doctorProfile.save();
+
+    // Delete the linked user account
+    const user = doctorProfile.user;
+    await User.findByIdAndDelete(user._id);
+
+    res.json({
+      success: true,
+      message: 'Doctor removed successfully',
+      doctor: doctorProfile
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Helper function to get file path and validate
+const getFileInfo = async (doctorId, fileType) => {
+  // Validate fileType to prevent directory traversal
+  if (!['license', 'idCard', 'certificate'].includes(fileType)) {
+    return { error: 'Invalid file type', status: 400 };
+  }
+
+  const doctorProfile = await DoctorProfile.findById(doctorId);
+  if (!doctorProfile) {
+    return { error: 'Doctor profile not found', status: 404 };
+  }
+
+  // Check documents object first, then fallback to individual file fields
+  let filePath = doctorProfile.documents?.[fileType] || 
+                 doctorProfile[`${fileType}File`] || 
+                 '';
+
+  if (!filePath) {
+    return { error: 'File not found', status: 404 };
+  }
+
+  // Remove leading slash if present and construct absolute path
+  const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+  const absolutePath = path.join(__dirname, '..', cleanPath);
+
+  // Security check: Ensure the file is within the /uploads/doctors directory
+  const uploadsDir = path.join(__dirname, '../uploads/doctors');
+  if (!absolutePath.startsWith(uploadsDir)) {
+    return { error: 'Access denied: Invalid file path', status: 403 };
+  }
+
+  if (!fs.existsSync(absolutePath)) {
+    return { error: 'File not found on server', status: 404 };
+  }
+
+  return { absolutePath, filePath: cleanPath };
+};
+
 // @desc    View doctor uploaded file
 // @route   GET /api/msh/view-file/:doctorId/:fileType
 // @access  Private (MSH)
@@ -91,40 +187,55 @@ exports.viewFile = async (req, res) => {
   try {
     const { doctorId, fileType } = req.params;
 
-    // Validate fileType to prevent directory traversal
-    if (!['license', 'idCard', 'certificate'].includes(fileType)) {
-      return res.status(400).json({ message: 'Invalid file type' });
+    const fileInfo = await getFileInfo(doctorId, fileType);
+    if (fileInfo.error) {
+      return res.status(fileInfo.status).json({ message: fileInfo.error });
     }
 
-    const doctorProfile = await DoctorProfile.findById(doctorId);
-    if (!doctorProfile) {
-      return res.status(404).json({ message: 'Doctor profile not found' });
+    // Determine Content-Type based on file extension
+    const ext = path.extname(fileInfo.absolutePath).toLowerCase();
+    const contentTypes = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${path.basename(fileInfo.absolutePath)}"`);
+    res.sendFile(fileInfo.absolutePath);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Download doctor uploaded file
+// @route   GET /api/msh/download-file/:doctorId/:fileType
+// @access  Private (MSH)
+exports.downloadFile = async (req, res) => {
+  try {
+    const { doctorId, fileType } = req.params;
+
+    const fileInfo = await getFileInfo(doctorId, fileType);
+    if (fileInfo.error) {
+      return res.status(fileInfo.status).json({ message: fileInfo.error });
     }
 
-    // Check documents object first, then fallback to individual file fields
-    let filePath = doctorProfile.documents?.[fileType] || 
-                   doctorProfile[`${fileType}File`] || 
-                   '';
+    // Determine Content-Type based on file extension
+    const ext = path.extname(fileInfo.absolutePath).toLowerCase();
+    const contentTypes = {
+      '.pdf': 'application/pdf',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png'
+    };
+    const contentType = contentTypes[ext] || 'application/octet-stream';
 
-    if (!filePath) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-
-    // Remove leading slash if present and construct absolute path
-    const cleanPath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-    const absolutePath = path.join(__dirname, '..', cleanPath);
-
-    // Security check: Ensure the file is within the /uploads/doctors directory
-    const uploadsDir = path.join(__dirname, '../uploads/doctors');
-    if (!absolutePath.startsWith(uploadsDir)) {
-      return res.status(403).json({ message: 'Access denied: Invalid file path' });
-    }
-
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({ message: 'File not found on server' });
-    }
-
-    res.sendFile(absolutePath);
+    const fileName = path.basename(fileInfo.absolutePath);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.sendFile(fileInfo.absolutePath);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -135,13 +246,18 @@ exports.viewFile = async (req, res) => {
 // @access  Private (MSH)
 exports.getAllDoctors = async (req, res) => {
   try {
-    const doctors = await DoctorProfile.find()
+    const doctors = await DoctorProfile.find({ status: { $ne: 'removed' } })
       .populate('user', 'email name createdAt')
       .sort({ createdAt: -1 });
 
+    // Filter out deleted account by email
+    const filteredDoctors = doctors.filter(doctor => {
+      return doctor.user && doctor.user.email !== 'rinesa1@gmail.com';
+    });
+
     // Get prescription counts for each doctor
     const doctorsWithCounts = await Promise.all(
-      doctors.map(async (doctor) => {
+      filteredDoctors.map(async (doctor) => {
         const prescriptionCount = await Prescription.countDocuments({ doctor: doctor.user._id });
         return {
           ...doctor.toObject(),
@@ -198,12 +314,12 @@ exports.getDoctorById = async (req, res) => {
 // @access  Private (MSH)
 exports.getStatsOverview = async (req, res) => {
   try {
-    const totalDoctors = await DoctorProfile.countDocuments();
+    const totalDoctors = await DoctorProfile.countDocuments({ status: { $ne: 'removed' } });
     const approvedDoctors = await DoctorProfile.countDocuments({ status: 'approved' });
     const pendingDoctors = await DoctorProfile.countDocuments({ status: 'pending' });
     const rejectedDoctors = await DoctorProfile.countDocuments({ status: 'rejected' });
 
-    // Find most active doctor
+    // Find most active doctor (excluding removed)
     const prescriptionCounts = await Prescription.aggregate([
       {
         $group: {
@@ -221,8 +337,10 @@ exports.getStatsOverview = async (req, res) => {
 
     let mostActiveDoctor = null;
     if (prescriptionCounts.length > 0) {
-      const doctorProfile = await DoctorProfile.findOne({ user: prescriptionCounts[0]._id })
-        .populate('user', 'name email');
+      const doctorProfile = await DoctorProfile.findOne({ 
+        user: prescriptionCounts[0]._id,
+        status: { $ne: 'removed' }
+      }).populate('user', 'name email');
       if (doctorProfile) {
         mostActiveDoctor = {
           name: doctorProfile.user.name || `${doctorProfile.firstName} ${doctorProfile.lastName}`,
@@ -270,8 +388,10 @@ exports.getTopDoctors = async (req, res) => {
 
     const topDoctors = await Promise.all(
       prescriptionCounts.map(async (item) => {
-        const doctorProfile = await DoctorProfile.findOne({ user: item._id })
-          .populate('user', 'name email');
+        const doctorProfile = await DoctorProfile.findOne({ 
+          user: item._id,
+          status: { $ne: 'removed' }
+        }).populate('user', 'name email');
         if (doctorProfile) {
           return {
             doctorId: doctorProfile._id,

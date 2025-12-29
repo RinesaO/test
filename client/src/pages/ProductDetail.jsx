@@ -6,13 +6,14 @@ import { useLanguage } from '../context/LanguageContext';
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [product, setProduct] = useState(null);
   const [pharmacies, setPharmacies] = useState([]);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeAds, setActiveAds] = useState([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [showSideEffectsModal, setShowSideEffectsModal] = useState(false);
 
   useEffect(() => {
     fetchProductDetails();
@@ -228,14 +229,16 @@ const ProductDetail = () => {
                   </div>
                 )}
 
-                {product.sideEffects && (
-                  <div>
-                    <h2 className="text-sm md:text-base font-semibold text-gray-900 mb-2">
-                      {t('product.sideEffects')}
-                    </h2>
-                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">
-                      {product.sideEffects}
-                    </p>
+                {product.sideEffects && product.sideEffects.trim() !== '' && (
+                  <div className="mt-4">
+                    <button
+                      id="view-side-effects"
+                      onClick={() => setShowSideEffectsModal(true)}
+                      style={{ fontWeight: 'bold', color: 'red' }}
+                      className="text-sm underline cursor-pointer hover:opacity-80"
+                    >
+                      {language === 'al' ? 'Shiko efektet anësore' : 'View Side Effects'}
+                    </button>
                   </div>
                 )}
 
@@ -416,6 +419,43 @@ const ProductDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Side Effects Modal */}
+      {showSideEffectsModal && product && product.sideEffects && product.sideEffects.trim() !== '' && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setShowSideEffectsModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t('product.sideEffects')}
+              </h2>
+              <button
+                onClick={() => setShowSideEffectsModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <div className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+              {product.sideEffects}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowSideEffectsModal(false)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                {t('button.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

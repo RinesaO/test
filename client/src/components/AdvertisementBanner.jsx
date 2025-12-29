@@ -33,6 +33,21 @@ const AdvertisementBanner = ({ onAdClick }) => {
     }
   };
 
+  const handleAdClick = async (ad) => {
+    // Track click if promotionId exists
+    if (ad.promotionId || ad._id) {
+      try {
+        await axios.post(`/api/pharmacy/promotions/${ad.promotionId || ad._id}/click`);
+      } catch (error) {
+        console.error('Error tracking click:', error);
+      }
+    }
+    // Call the original onClick handler
+    if (onAdClick) {
+      onAdClick(ad);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mb-6 bg-gray-100 rounded-lg h-40 flex items-center justify-center">
@@ -54,12 +69,12 @@ const AdvertisementBanner = ({ onAdClick }) => {
           <img
             src={`http://localhost:5000${currentAd.image}`}
             alt="Advertisement"
-            onClick={() => onAdClick && onAdClick(currentAd)}
+            onClick={() => handleAdClick(currentAd)}
             className="w-full h-full object-cover cursor-pointer transition-transform duration-300 hover:scale-105"
           />
         ) : (
           <div
-            onClick={() => onAdClick && onAdClick(currentAd)}
+            onClick={() => handleAdClick(currentAd)}
             className="w-full h-full bg-primary-200 flex items-center justify-center cursor-pointer hover:bg-primary-300 transition-colors"
           >
             <div className="text-center">

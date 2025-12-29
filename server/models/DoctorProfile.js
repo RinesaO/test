@@ -56,7 +56,7 @@ const doctorProfileSchema = new mongoose.Schema({
   }],
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'pending_ministry_review', 'approved_by_ministry', 'rejected_by_ministry'],
+    enum: ['pending', 'approved', 'rejected', 'pending_ministry_review', 'approved_by_ministry', 'rejected_by_ministry', 'removed'],
     default: 'pending_ministry_review'
   },
   documents: {

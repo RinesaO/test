@@ -1,5 +1,6 @@
 const Pharmacy = require('../models/Pharmacy');
 const Product = require('../models/Product');
+const Promotion = require('../models/Promotion');
 
 // @desc    Get all active pharmacies
 // @route   GET /api/public/pharmacies
@@ -120,31 +121,35 @@ exports.getCities = async (req, res) => {
   }
 };
 
-// @desc    Get active advertisements
+// @desc    Get active advertisements (promoted products)
 // @route   GET /api/public/ads
 // @access  Public
 exports.getActiveAds = async (req, res) => {
   try {
-    const pharmacies = await Pharmacy.find({
-      isActive: true,
-      'advertisement.paid': true,
-      'advertisement.active': true
-    })
-      .select('name advertisement')
-      .populate('advertisement.product', 'name price')
+    // Get all active promotions with pharmacy and product info
+    const promotions = await Promotion.find({ active: true })
+      .populate({
+        path: 'pharmacy',
+        select: 'name isActive',
+        match: { isActive: true }
+      })
+      .populate('product', 'name price category image')
       .lean();
 
-    const ads = pharmacies
-      .filter(pharmacy => pharmacy.advertisement && pharmacy.advertisement.active)
-      .map(pharmacy => ({
-        pharmacyId: pharmacy._id,
-        pharmacyName: pharmacy.name,
-        image: pharmacy.advertisement.image,
-        offerText: pharmacy.advertisement.offerText,
-        product: pharmacy.advertisement.product
+    // Filter out promotions where pharmacy is inactive or doesn't exist
+    const activeAds = promotions
+      .filter(promo => promo.pharmacy && promo.product)
+      .map(promo => ({
+        _id: promo._id,
+        promotionId: promo._id,
+        pharmacyId: promo.pharmacy._id,
+        pharmacyName: promo.pharmacy.name,
+        image: promo.image,
+        offerText: promo.offerText,
+        product: promo.product
       }));
 
-    res.json({ success: true, ads });
+    res.json({ success: true, ads: activeAds });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -30,10 +30,23 @@ const DoctorSignUp = () => {
   };
 
   const handleFileChange = (e) => {
-    setFiles({
-      ...files,
-      [e.target.name]: e.target.files[0]
-    });
+    const file = e.target.files[0];
+    if (file) {
+      // Validate license field - images only, no PDFs
+      if (e.target.name === 'license') {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+          setError('License must be an image file (JPEG or PNG). PDF files are not accepted.');
+          e.target.value = '';
+          return;
+        }
+      }
+      setError('');
+      setFiles({
+        ...files,
+        [e.target.name]: file
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -218,13 +231,13 @@ const DoctorSignUp = () => {
 
             <div>
               <label htmlFor="license" className="block text-sm font-medium text-gray-700">
-                License PDF
+                License
               </label>
               <input
                 id="license"
                 name="license"
                 type="file"
-                accept=".pdf"
+                accept="image/jpeg,image/jpg,image/png"
                 required
                 onChange={handleFileChange}
                 className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"

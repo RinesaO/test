@@ -4,7 +4,9 @@ const {
   getPendingDoctors,
   approveDoctor,
   rejectDoctor,
+  removeDoctor,
   viewFile,
+  downloadFile,
   getAllDoctors,
   getDoctorById,
   getStatsOverview,
@@ -19,7 +21,9 @@ router.use(authorize('msh'));
 router.get('/pending-doctors', getPendingDoctors);
 router.post('/approve-doctor', approveDoctor);
 router.post('/reject-doctor', rejectDoctor);
+router.post('/remove-doctor', removeDoctor);
 router.get('/view-file/:doctorId/:fileType', viewFile);
+router.get('/download-file/:doctorId/:fileType', downloadFile);
 router.get('/all-doctors', getAllDoctors);
 router.get('/doctor/:id', getDoctorById);
 router.get('/stats/overview', getStatsOverview);

@@ -11,6 +11,7 @@ const Products = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    sideEffects: '',
     price: '',
     category: '',
     inStock: true,
@@ -58,6 +59,7 @@ const Products = () => {
       setFormData({
         name: '',
         description: '',
+        sideEffects: '',
         price: '',
         category: '',
         inStock: true,
@@ -74,6 +76,7 @@ const Products = () => {
     setFormData({
       name: product.name,
       description: product.description || '',
+      sideEffects: product.sideEffects || '',
       price: product.price,
       category: product.category,
       inStock: product.inStock,
@@ -225,6 +228,17 @@ const Products = () => {
                     value={formData.description}
                     onChange={handleChange}
                     rows="3"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('product.sideEffects')}</label>
+                  <textarea
+                    name="sideEffects"
+                    value={formData.sideEffects}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder={t('product.sideEffects')}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   />
                 </div>

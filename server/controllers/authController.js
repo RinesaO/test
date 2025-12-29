@@ -105,12 +105,22 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Block doctor login if not approved
+    // Block doctor login if not approved or removed
     let showApprovalMessage = false;
     if (user.role === 'doctor') {
       const DoctorProfile = require('../models/DoctorProfile');
       const doctorProfile = await DoctorProfile.findOne({ user: user._id });
-      if (!doctorProfile || doctorProfile.status !== 'approved') {
+      if (!doctorProfile) {
+        return res.status(403).json({ 
+          message: 'Your account is still under review by the Ministry of Health.' 
+        });
+      }
+      if (doctorProfile.status === 'removed') {
+        return res.status(403).json({ 
+          message: 'Your account has been removed by the Ministry of Health.' 
+        });
+      }
+      if (doctorProfile.status !== 'approved') {
         return res.status(403).json({ 
           message: 'Your account is still under review by the Ministry of Health.' 
         });

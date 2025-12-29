@@ -228,7 +228,7 @@ exports.applyForDoctor = async (req, res) => {
 
         // Validate required files
         if (!req.files?.license?.[0] || !req.files?.idCard?.[0] || !req.files?.certificate?.[0]) {
-          return res.status(400).json({ message: 'All document files are required (License PDF, ID Card, Certificate)' });
+          return res.status(400).json({ message: 'All document files are required (License, ID Card, Certificate)' });
         }
 
         // Check if user already exists
@@ -249,20 +249,34 @@ exports.applyForDoctor = async (req, res) => {
         // Create doctor-specific upload directory
         const doctorDir = createDoctorUploadDir(user._id.toString());
         
-        // Move files to doctor-specific directory
-        const moveFile = (file, newName) => {
+        // Move files to doctor-specific directory with collision prevention
+        const moveFile = (file, baseName) => {
           const oldPath = path.join(__dirname, '../uploads/doctors', file.filename);
-          const newPath = path.join(doctorDir, newName);
-          if (fs.existsSync(oldPath)) {
-            fs.renameSync(oldPath, newPath);
-            return `/uploads/doctors/${user._id}/${newName}`;
+          if (!fs.existsSync(oldPath)) {
+            return '';
           }
-          return '';
+
+          // Ensure unique filename by checking if file exists
+          let finalName = baseName;
+          let counter = 0;
+          const ext = path.extname(baseName);
+          const nameWithoutExt = path.basename(baseName, ext);
+          
+          let newPath = path.join(doctorDir, finalName);
+          while (fs.existsSync(newPath)) {
+            counter++;
+            finalName = `${nameWithoutExt}_${counter}${ext}`;
+            newPath = path.join(doctorDir, finalName);
+          }
+
+          fs.renameSync(oldPath, newPath);
+          return `/uploads/doctors/${user._id}/${finalName}`;
         };
 
-        const licenseFileName = `license-${Date.now()}${path.extname(req.files.license[0].originalname)}`;
-        const idCardFileName = `idcard-${Date.now()}${path.extname(req.files.idCard[0].originalname)}`;
-        const certificateFileName = `certificate-${Date.now()}${path.extname(req.files.certificate[0].originalname)}`;
+        const timestamp = Date.now();
+        const licenseFileName = `license-${timestamp}${path.extname(req.files.license[0].originalname)}`;
+        const idCardFileName = `idcard-${timestamp}${path.extname(req.files.idCard[0].originalname)}`;
+        const certificateFileName = `certificate-${timestamp}${path.extname(req.files.certificate[0].originalname)}`;
 
         const licenseFile = moveFile(req.files.license[0], licenseFileName);
         const idCardFile = moveFile(req.files.idCard[0], idCardFileName);

@@ -9,6 +9,7 @@ const MSHDoctorProfile = () => {
   const [doctor, setDoctor] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
 
   useEffect(() => {
     fetchDoctorData();
@@ -26,9 +27,48 @@ const MSHDoctorProfile = () => {
     }
   };
 
-  const viewFile = (fileType) => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    window.open(`${apiUrl}/api/msh/view-file/${id}/${fileType}`, '_blank');
+  const viewFile = async (fileType) => {
+    try {
+      const response = await axios.get(`/api/msh/view-file/${id}/${fileType}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error viewing file:', error);
+    }
+  };
+
+  const downloadFile = async (fileType) => {
+    try {
+      const response = await axios.get(`/api/msh/download-file/${id}/${fileType}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = response.headers['content-disposition'];
+      let fileName = `${fileType}.pdf`;
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (fileNameMatch) {
+          fileName = fileNameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
   };
 
   const formatDate = (date) => {
@@ -109,32 +149,14 @@ const MSHDoctorProfile = () => {
             </div>
 
             <h3 className="text-lg font-semibold mt-6 mb-3">Documents</h3>
-            <div className="space-y-2">
-              {doctor.licenseFile && (
-                <button
-                  onClick={() => viewFile('license')}
-                  className="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
-                >
-                  📄 View License
-                </button>
-              )}
-              {doctor.idCardFile && (
-                <button
-                  onClick={() => viewFile('idCard')}
-                  className="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
-                >
-                  🆔 View ID Card
-                </button>
-              )}
-              {doctor.certificateFile && (
-                <button
-                  onClick={() => viewFile('certificate')}
-                  className="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
-                >
-                  📜 View Certificate
-                </button>
-              )}
-            </div>
+            {(doctor.licenseFile || doctor.idCardFile || doctor.certificateFile) && (
+              <button
+                onClick={() => setShowDocumentModal(true)}
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 text-sm font-medium"
+              >
+                View Documents
+              </button>
+            )}
           </div>
 
           {/* Prescriptions */}
@@ -164,6 +186,82 @@ const MSHDoctorProfile = () => {
             </div>
           </div>
         </div>
+
+        {/* Document Modal */}
+        {showDocumentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowDocumentModal(false)}>
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Documents</h2>
+                <button
+                  onClick={() => setShowDocumentModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="space-y-3">
+                {doctor.licenseFile && (
+                  <div className="flex items-center justify-between p-3 border border-gray-200 rounded">
+                    <span className="text-sm font-medium text-gray-700">License</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => viewFile('license')}
+                        className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => downloadFile('license')}
+                        className="px-3 py-1.5 text-xs text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {doctor.idCardFile && (
+                  <div className="flex items-center justify-between p-3 border border-gray-200 rounded">
+                    <span className="text-sm font-medium text-gray-700">ID Card</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => viewFile('idCard')}
+                        className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => downloadFile('idCard')}
+                        className="px-3 py-1.5 text-xs text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {doctor.certificateFile && (
+                  <div className="flex items-center justify-between p-3 border border-gray-200 rounded">
+                    <span className="text-sm font-medium text-gray-700">Certificate</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => viewFile('certificate')}
+                        className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => downloadFile('certificate')}
+                        className="px-3 py-1.5 text-xs text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MSHLayout>
   );

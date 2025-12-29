@@ -29,7 +29,18 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  // Accept PDFs and images
+  // License field: images only, no PDFs
+  if (file.fieldname === 'license') {
+    const allowedImageMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (allowedImageMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('License must be an image file (JPEG or PNG). PDF files are not accepted.'), false);
+    }
+    return;
+  }
+  
+  // Other fields (idCard, certificate): Accept PDFs and images
   const allowedMimes = [
     'application/pdf',
     'image/jpeg',

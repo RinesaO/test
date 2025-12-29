@@ -10,6 +10,7 @@ const PharmacyAdvertisementSection = () => {
   const { t } = useLanguage();
   const [pharmacy, setPharmacy] = useState(null);
   const [products, setProducts] = useState([]);
+  const [promotions, setPromotions] = useState([]);
   const [showAdForm, setShowAdForm] = useState(false);
   const [adFormData, setAdFormData] = useState({
     image: null,
@@ -21,6 +22,7 @@ const PharmacyAdvertisementSection = () => {
   useEffect(() => {
     fetchPharmacyData();
     fetchProducts();
+    fetchPromotions();
   }, []);
 
   const fetchPharmacyData = async () => {
@@ -38,6 +40,15 @@ const PharmacyAdvertisementSection = () => {
       setProducts(response.data.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+    }
+  };
+
+  const fetchPromotions = async () => {
+    try {
+      const response = await axios.get('/api/pharmacy/promotions');
+      setPromotions(response.data.promotions || []);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
     }
   };
 
@@ -82,6 +93,7 @@ const PharmacyAdvertisementSection = () => {
       setShowAdForm(false);
       setAdFormData({ image: null, offerText: '', productId: '' });
       fetchPharmacyData();
+      fetchPromotions(); // Refresh promotions list
     } catch (error) {
       setMessage('Error: ' + (error.response?.data?.message || error.message));
     }
@@ -107,17 +119,34 @@ const PharmacyAdvertisementSection = () => {
             {t('pharmacy.purchaseAd')}
           </button>
         </div>
-      ) : !pharmacy?.advertisement?.active ? (
+      ) : (
         <div>
-          <p className="text-gray-600 mb-4">{t('pharmacy.adSlotPurchased')}</p>
-          {!showAdForm ? (
-            <button
-              onClick={() => setShowAdForm(true)}
-              className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
-            >
-              {t('pharmacy.createAdvertisement')}
-            </button>
-          ) : (
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-green-600 font-semibold">✓ Ad slot purchased - Promote your products</p>
+            {!showAdForm ? (
+              <button
+                onClick={() => {
+                  setShowAdForm(true);
+                  setAdFormData({ image: null, offerText: '', productId: '' });
+                }}
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 text-sm"
+              >
+                Promote Product
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowAdForm(false);
+                  setAdFormData({ image: null, offerText: '', productId: '' });
+                }}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 text-sm"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+
+          {showAdForm && (
             <form onSubmit={handlePublishAd} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('pharmacy.adImage')}</label>
@@ -177,19 +206,46 @@ const PharmacyAdvertisementSection = () => {
               </div>
             </form>
           )}
-        </div>
-      ) : (
-        <div>
-          <p className="text-green-600 font-semibold mb-2">✓ {t('pharmacy.adActive')}</p>
-          {pharmacy.advertisement.image && (
-            <img
-              src={`http://localhost:5000${pharmacy.advertisement.image}`}
-              alt="Advertisement"
-              className="w-full max-w-md h-32 object-cover rounded-lg mb-2"
-            />
-          )}
-          {pharmacy.advertisement.offerText && (
-            <p className="text-gray-600 mb-2">{pharmacy.advertisement.offerText}</p>
+
+          {/* Promotions Stats Table */}
+          {promotions.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Promoted Products Stats</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Product Name</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase border-b">Clicks</th>
+                      <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase border-b">Purchases</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promotions.map((promo) => (
+                      <tr key={promo._id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 text-sm text-gray-900 border-b">
+                          {promo.product?.name || 'Unknown Product'}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-center text-gray-600 border-b">
+                          {promo.clicks || 0}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-center text-gray-600 border-b">
+                          {promo.purchases || 0}
+                        </td>
+                        <td className="px-4 py-2 text-sm border-b">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            promo.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {promo.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
       )}

@@ -61,6 +61,50 @@ const AdminDoctorRequests = () => {
     }
   };
 
+  const viewFile = async (doctorId, fileType) => {
+    try {
+      const response = await axios.get(`/api/admin/view-file/${doctorId}/${fileType}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Error viewing file:', error);
+    }
+  };
+
+  const downloadFile = async (doctorId, fileType) => {
+    try {
+      const response = await axios.get(`/api/admin/download-file/${doctorId}/${fileType}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = response.headers['content-disposition'];
+      let fileName = `${fileType}.pdf`;
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (fileNameMatch) {
+          fileName = fileNameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -153,6 +197,63 @@ const AdminDoctorRequests = () => {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Documents Section */}
+                {(request.licenseFile || request.idCardFile || request.certificateFile) && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Documents:</p>
+                    <div className="space-y-2">
+                      {request.licenseFile && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => viewFile(request._id, 'license')}
+                            className="flex-1 text-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 text-sm"
+                          >
+                            View License
+                          </button>
+                          <button
+                            onClick={() => downloadFile(request._id, 'license')}
+                            className="flex-1 text-center px-3 py-1.5 bg-green-50 text-green-700 rounded hover:bg-green-100 text-sm"
+                          >
+                            Download License
+                          </button>
+                        </div>
+                      )}
+                      {request.idCardFile && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => viewFile(request._id, 'idCard')}
+                            className="flex-1 text-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 text-sm"
+                          >
+                            View ID Card
+                          </button>
+                          <button
+                            onClick={() => downloadFile(request._id, 'idCard')}
+                            className="flex-1 text-center px-3 py-1.5 bg-green-50 text-green-700 rounded hover:bg-green-100 text-sm"
+                          >
+                            Download ID Card
+                          </button>
+                        </div>
+                      )}
+                      {request.certificateFile && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => viewFile(request._id, 'certificate')}
+                            className="flex-1 text-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 text-sm"
+                          >
+                            View Certificate
+                          </button>
+                          <button
+                            onClick={() => downloadFile(request._id, 'certificate')}
+                            className="flex-1 text-center px-3 py-1.5 bg-green-50 text-green-700 rounded hover:bg-green-100 text-sm"
+                          >
+                            Download Certificate
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

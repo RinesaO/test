@@ -8,6 +8,10 @@ const MSHAllDoctors = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [removalReason, setRemovalReason] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +47,34 @@ const MSHAllDoctors = () => {
     }
   };
 
+  const handleRemoveClick = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowRemoveModal(true);
+    setRemovalReason('');
+    setMessage('');
+  };
+
+  const handleRemoveConfirm = async () => {
+    if (!removalReason) {
+      setMessage('Please select a removal reason');
+      return;
+    }
+
+    try {
+      await axios.post('/api/msh/remove-doctor', {
+        doctorId: selectedDoctor._id,
+        removalReason: removalReason
+      });
+      setMessage('Doctor removed successfully');
+      setShowRemoveModal(false);
+      setSelectedDoctor(null);
+      setRemovalReason('');
+      fetchAllDoctors();
+    } catch (error) {
+      setMessage('Error: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
   const filteredDoctors = doctors.filter(doctor => {
     const matchesSearch = 
       `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,6 +100,12 @@ const MSHAllDoctors = () => {
     <MSHLayout>
       <div className="p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">All Doctors</h1>
+
+        {message && (
+          <div className={`mb-4 p-4 rounded ${message.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+            {message}
+          </div>
+        )}
 
         {/* Search and Filter */}
         <div className="mb-6 flex gap-4">
@@ -141,18 +179,87 @@ const MSHAllDoctors = () => {
                     {doctor.prescriptionCount || 0}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => navigate(`/msh/doctor/${doctor._id}`)}
-                      className="text-primary-600 hover:text-primary-900"
-                    >
-                      View Profile
-                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => navigate(`/msh/doctor/${doctor._id}`)}
+                        className="text-primary-600 hover:text-primary-900"
+                      >
+                        View Profile
+                      </button>
+                      {(doctor.status === 'approved' || doctor.status === 'rejected') && (
+                        <button
+                          onClick={() => handleRemoveClick(doctor)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Remove Doctor
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Remove Doctor Modal */}
+        {showRemoveModal && selectedDoctor && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowRemoveModal(false)}>
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Remove Doctor</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to remove {selectedDoctor.firstName} {selectedDoctor.lastName}? This action cannot be undone.
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Removal Reason <span className="text-red-600">*</span>
+                </label>
+                <select
+                  value={removalReason}
+                  onChange={(e) => setRemovalReason(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Select a reason</option>
+                  <option value="Did not follow platform guidelines">Did not follow platform guidelines</option>
+                  <option value="License or documentation issues">License or documentation issues</option>
+                  <option value="Violation of pharmaceutical regulations">Violation of pharmaceutical regulations</option>
+                  <option value="Inactive or unresponsive account">Inactive or unresponsive account</option>
+                  <option value="False or misleading information">False or misleading information</option>
+                  <option value="Ethical or professional misconduct">Ethical or professional misconduct</option>
+                  <option value="Other (internal review decision)">Other (internal review decision)</option>
+                </select>
+              </div>
+
+              {message && (
+                <div className={`mb-4 p-3 rounded ${message.includes('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                  {message}
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowRemoveModal(false);
+                    setSelectedDoctor(null);
+                    setRemovalReason('');
+                    setMessage('');
+                  }}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRemoveConfirm}
+                  className="px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Remove Doctor
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MSHLayout>
   );

@@ -57,11 +57,12 @@ exports.createProduct = async (req, res) => {
       return res.status(404).json({ message: 'Pharmacy not found' });
     }
 
-    const { name, description, price, category, inStock, stockQuantity } = req.body;
+    const { name, description, sideEffects, price, category, inStock, stockQuantity } = req.body;
 
     const product = await Product.create({
       name,
       description,
+      sideEffects: sideEffects ? sideEffects.trim() : '',
       price,
       category,
       inStock: inStock !== undefined ? inStock : true,
@@ -95,10 +96,11 @@ exports.updateProduct = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const { name, description, price, category, inStock, stockQuantity } = req.body;
+    const { name, description, sideEffects, price, category, inStock, stockQuantity } = req.body;
 
     if (name) product.name = name;
     if (description !== undefined) product.description = description;
+    if (sideEffects !== undefined) product.sideEffects = sideEffects ? sideEffects.trim() : '';
     if (price !== undefined) product.price = price;
     if (category) product.category = category;
     if (inStock !== undefined) product.inStock = inStock;

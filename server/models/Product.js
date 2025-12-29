@@ -10,6 +10,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  sideEffects: {
+    type: String,
+    trim: true
+  },
   price: {
     type: Number,
     required: [true, 'Product price is required'],
