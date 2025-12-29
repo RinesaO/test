@@ -79,6 +79,31 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Defensive multi-tab safety fix: Listen for storage changes from other tabs
+  // If session state changes in another tab (login/logout), sync this tab's state
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      // Only react to changes in the 'token' key
+      if (e.key === 'token') {
+        if (e.newValue === null && e.oldValue !== null) {
+          // Token was removed in another tab (logout) - sync logout in this tab
+          logout();
+        } else if (e.newValue !== null && e.oldValue === null) {
+          // Token was added in another tab (login) - reload to sync new session state
+          window.location.reload();
+        } else if (e.newValue !== null && e.oldValue !== null && e.newValue !== e.oldValue) {
+          // Token was changed in another tab (different user logged in) - reload to sync
+          window.location.reload();
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   const value = {
     user,
     loading,

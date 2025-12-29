@@ -257,47 +257,7 @@ const AdminDoctorRequests = () => {
                   </div>
                 )}
 
-                <div className="flex gap-4 mt-6">
-                  <button
-                    onClick={() => handleApprove(request._id)}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-medium"
-                  >
-                    Approve
-                  </button>
-                  {rejectingId === request._id ? (
-                    <div className="flex-1 flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Rejection reason (required)"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                      <button
-                        onClick={() => handleReject(request._id)}
-                        className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium"
-                      >
-                        Confirm Reject
-                      </button>
-                      <button
-                        onClick={() => {
-                          setRejectingId(null);
-                          setRejectReason('');
-                        }}
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setRejectingId(request._id)}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium"
-                    >
-                      Reject
-                    </button>
-                  )}
-                </div>
+                {/* Approve and Reject/Delete buttons removed intentionally for Admin view */}
               </div>
             ))}
           </div>

@@ -110,7 +110,8 @@ const DoctorSignUp = () => {
           Doctor Sign-Up Application
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Apply to become a registered doctor on PharmaCare
+          {/* UI-only change: Platform name updated to eFarmaci */}
+          Apply to become a registered doctor on eFarmaci
         </p>
       </div>
 

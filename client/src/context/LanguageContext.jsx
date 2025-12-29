@@ -109,7 +109,8 @@ const translations = {
     'home.findNearestPharmacy': 'Find Your Nearest Pharmacy in Kosovo',
     'home.connectWithPharmacies': 'Connect with trusted pharmacies and discover products near you',
     'home.findPharmacy': 'Find a Pharmacy',
-    'home.whyChoose': 'Why Choose PharmaCare?',
+    // UI-only change: Platform name updated to eFarmaci
+    'home.whyChoose': 'Why Choose eFarmaci?',
     'home.easyLocation': 'Easy Location',
     'home.easyLocationDesc': 'Find pharmacies near you with detailed location information and contact details.',
     'home.productCatalog': 'Product Catalog',
@@ -334,7 +335,8 @@ const translations = {
     'home.findNearestPharmacy': 'Gjej Farmacinë Më Të Afërt në Kosovë',
     'home.connectWithPharmacies': 'Lidhu me farmaci të besueshme dhe zbuloni produkte pranë teje',
     'home.findPharmacy': 'Gjej një Farmaci',
-    'home.whyChoose': 'Pse të Zgjidhni PharmaCare?',
+    // UI-only change: Platform name updated to eFarmaci
+    'home.whyChoose': 'Pse të Zgjidhni eFarmaci?',
     'home.easyLocation': 'Vendndodhje e Lehtë',
     'home.easyLocationDesc': 'Gjej farmaci pranë teje me informacion të detajuar të vendndodhjes dhe detaje kontakti.',
     'home.productCatalog': 'Katalog Produktesh',
